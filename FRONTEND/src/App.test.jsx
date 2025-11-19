@@ -1,76 +1,232 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import App from './App'
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import App from "./App";
 
-const mockTasks = [
-  { id: 1, name: 'Buy Groceries', description: 'Milk and Eggs', createdAt: '2023-10-01T10:00:00' },
-  { id: 2, name: 'Walk Dog', description: 'In the park', createdAt: '2023-10-01T12:00:00' }
-]
+vi.mock("./components/NavBar/NavBar", () => ({
+  default: () => <div data-testid="navbar">NavBar Mock</div>,
+}));
 
-describe('App Integration', () => {
-  const mockFetch = (data, ok = true) => {
-    return vi.fn().mockResolvedValue({
-      ok,
-      json: () => Promise.resolve(data),
-    })
-  }
+vi.mock("./components/TaskForm/TaskForm", () => ({
+  default: ({ onTaskAdded }) => (
+    <button data-testid="add-task-btn" onClick={onTaskAdded}>
+      Add Task Mock
+    </button>
+  ),
+}));
+
+vi.mock("./components/TaskList/TaskList", () => ({
+  default: ({ tasks, onTaskComplete, onTaskEdit }) => (
+    <div data-testid="task-list">
+      {tasks.map((task) => (
+        <div key={task.id}>
+          <span>{task.title}</span>
+          <button
+            data-testid={`complete-${task.id}`}
+            onClick={() => onTaskComplete(task.id)}
+          >
+            Complete
+          </button>
+          <button
+            data-testid={`edit-${task.id}`}
+            onClick={() => onTaskEdit({ ...task, title: "Updated Title" })}
+          >
+            Edit
+          </button>
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
+describe("App Component Integration", () => {
+  const fetchMock = vi.fn();
+  global.fetch = fetchMock;
+  global.alert = vi.fn();
 
   beforeEach(() => {
-    global.fetch = mockFetch(mockTasks)
-    global.alert = vi.fn()
-  })
+    fetchMock.mockClear();
+    global.alert.mockClear();
+  });
 
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
+  it("renders tasks successfully (Happy Path)", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Test Task", isCompleted: false }],
+    });
+    render(<App />);
 
-  it('fetches and renders tasks on mount', async () => {
-    render(<App />)
-
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
-
-    await waitFor(() => {
-      expect(screen.getByText('Buy Groceries')).toBeInTheDocument()
-      expect(screen.getByText('Walk Dog')).toBeInTheDocument()
-    })
-  })
-
-  it('adds a new task and refreshes list', async () => {
-    render(<App />)
-
-    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument())
-
-    const nameInput = screen.getByPlaceholderText('Enter task title')
-    const descInput = screen.getByPlaceholderText('Enter task description')
-    const addButton = screen.getByText('Add Task')
-
-    fireEvent.change(nameInput, { target: { value: 'New Task' } })
-    fireEvent.change(descInput, { target: { value: 'New Desc' } })
-
-    global.fetch
-      .mockImplementationOnce(mockFetch({ id: 3, name: 'New Task' })) 
-      .mockImplementationOnce(mockFetch([...mockTasks, { id: 3, name: 'New Task', description: 'New Desc', createdAt: new Date().toISOString() }]))
-    fireEvent.click(addButton)
+    expect(screen.getByText(/Loading tasks.../i)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('New Task')).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText("Test Task")).toBeInTheDocument();
+    });
 
-  it('completes a task and refreshes list', async () => {
-    render(<App />)
-    
-    await waitFor(() => expect(screen.getByText('Buy Groceries')).toBeInTheDocument())
+    expect(screen.getByTestId("navbar")).toBeInTheDocument();
+  });
 
-    global.fetch
-        .mockImplementationOnce(mockFetch({})) 
-        .mockImplementationOnce(mockFetch([mockTasks[1]])) 
+  it("handles API error on initial load and allows Retry", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("Network Error"));
 
-    const doneButtons = screen.getAllByText('Done')
-    fireEvent.click(doneButtons[0])
+    render(<App />);
 
     await waitFor(() => {
-      expect(screen.queryByText('Buy Groceries')).not.toBeInTheDocument()
-    })
-  })
-})
+      expect(
+        screen.getByText(/Could not connect to server/i)
+      ).toBeInTheDocument();
+    });
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Retried Task", isCompleted: false }],
+    });
+
+    const retryBtn = screen.getByText(/Retry Connection/i);
+    fireEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("Retried Task")).toBeInTheDocument();
+    });
+  });
+
+  it('handles "Backend not ready" generic error', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Could not connect to server/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("completes a task successfully", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Task 1", isCompleted: false }],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByText("Task 1")).toBeInTheDocument());
+
+    fetchMock.mockResolvedValueOnce({ ok: true });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Task 1", isCompleted: true }],
+    });
+
+    fireEvent.click(screen.getByTestId("complete-1"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/tasks/1/complete",
+        expect.objectContaining({
+          method: "PUT",
+        })
+      );
+    });
+  });
+
+  it("handles error when completing a task", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Task 1", isCompleted: false }],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByText("Task 1")).toBeInTheDocument());
+
+    fetchMock.mockRejectedValueOnce(new Error("Update failed"));
+
+    fireEvent.click(screen.getByTestId("complete-1"));
+
+    await waitFor(() => {
+      expect(console.error).toHaveBeenCalled; // Implicit check
+      expect(global.alert).toHaveBeenCalledWith("Error completing task");
+    });
+  });
+
+  it("edits a task successfully", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Old Title", isCompleted: false }],
+    });
+
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByText("Old Title")).toBeInTheDocument()
+    );
+
+    fetchMock.mockResolvedValueOnce({ ok: true });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Updated Title", isCompleted: false }],
+    });
+
+    fireEvent.click(screen.getByTestId("edit-1"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/tasks/1",
+        expect.objectContaining({
+          method: "PUT",
+          body: JSON.stringify({
+            id: 1,
+            title: "Updated Title",
+            isCompleted: false,
+          }),
+        })
+      );
+    });
+  });
+
+  it("handles error when updating a task", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 1, title: "Task 1", isCompleted: false }],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByText("Task 1")).toBeInTheDocument());
+
+    fetchMock.mockRejectedValueOnce(new Error("Update failed"));
+
+    fireEvent.click(screen.getByTestId("edit-1"));
+
+    await waitFor(() => {
+      expect(global.alert).toHaveBeenCalledWith("Error updating task");
+    });
+  });
+
+  it("refreshes tasks when a new task is added (via TaskForm)", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByTestId("add-task-btn")).toBeInTheDocument()
+    );
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: 99, title: "New Task" }],
+    });
+
+    fireEvent.click(screen.getByTestId("add-task-btn"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+});

@@ -1,5 +1,5 @@
-import React from 'react';
-import './NavBar.css';
+import React from "react";
+import "./NavBar.css";
 
 function Navbar() {
   const quote = "Consistency beats intensity";

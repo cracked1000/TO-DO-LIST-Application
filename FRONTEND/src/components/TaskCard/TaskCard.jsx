@@ -1,28 +1,33 @@
-import React, { useState } from 'react';
-import './TaskCard.css';
+import React, { useState } from "react";
+import "./TaskCard.css";
 
 function TaskCard({ task, onComplete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(task.name);
-  const [editedDescription, setEditedDescription] = useState(task.description || '');
+  const [editedDescription, setEditedDescription] = useState(
+    task.description || ""
+  );
+  const [error, setError] = useState("");
 
   const handleSave = () => {
-    if (editedName.trim() && editedDescription.trim()) {
-      onEdit({
-        ...task,
-        name: editedName.trim(),
-        description: editedDescription.trim()
-      });
-      setIsEditing(false);
-    } else {
-      alert('Please fill in both title and description');
+    if (!editedName.trim() || !editedDescription.trim()) {
+      setError("Title and description are required");
+      return;
     }
+    onEdit({
+      ...task,
+      name: editedName.trim(),
+      description: editedDescription.trim(),
+    });
+    setIsEditing(false);
+    setError("");
   };
 
   const handleCancel = () => {
     setEditedName(task.name);
-    setEditedDescription(task.description || '');
+    setEditedDescription(task.description || "");
     setIsEditing(false);
+    setError("");
   };
 
   const handleComplete = () => {
@@ -36,17 +41,37 @@ function TaskCard({ task, onComplete, onEdit }) {
           type="text"
           className="edit-input"
           value={editedName}
-          onChange={(e) => setEditedName(e.target.value)}
+          onChange={(e) => {
+            setEditedName(e.target.value);
+            if (error) setError("");
+          }}
           placeholder="Task title"
           autoFocus
         />
         <textarea
           className="edit-textarea"
           value={editedDescription}
-          onChange={(e) => setEditedDescription(e.target.value)}
+          onChange={(e) => {
+            setEditedDescription(e.target.value);
+            if (error) setError("");
+          }}
           placeholder="Task description"
           rows="3"
         />
+
+        {}
+        {error && (
+          <div
+            style={{
+              color: "#dc2626",
+              fontSize: "0.875rem",
+              marginBottom: "8px",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         <div className="task-actions">
           <button onClick={handleSave} className="btn-save">
             Save
@@ -61,12 +86,12 @@ function TaskCard({ task, onComplete, onEdit }) {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
