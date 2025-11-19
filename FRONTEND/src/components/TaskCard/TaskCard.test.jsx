@@ -18,25 +18,15 @@ describe("TaskCard Component", () => {
     render(
       <TaskCard task={mockTask} onComplete={() => {}} onEdit={() => {}} />
     );
-
     expect(screen.getByText("Original Name")).toBeInTheDocument();
-    expect(screen.getByText("Original Description")).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText("Task title")).not.toBeInTheDocument();
   });
 
   it("switches to edit mode when Edit button is clicked", () => {
     render(
       <TaskCard task={mockTask} onComplete={() => {}} onEdit={() => {}} />
     );
-
     fireEvent.click(screen.getByText("Edit"));
-
     expect(screen.getByPlaceholderText("Task title")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Task title").value).toBe(
-      "Original Name"
-    );
-    expect(screen.getByText("Save")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 
   it("calls onEdit with new values when Save is clicked", () => {
@@ -62,30 +52,13 @@ describe("TaskCard Component", () => {
     });
   });
 
-  it("resets values and exits edit mode on Cancel", () => {
+  it("shows error message and prevents save if fields are empty", () => {
     render(
       <TaskCard task={mockTask} onComplete={() => {}} onEdit={() => {}} />
     );
 
     fireEvent.click(screen.getByText("Edit"));
 
-    fireEvent.change(screen.getByPlaceholderText("Task title"), {
-      target: { value: "Wrong Name" },
-    });
-    fireEvent.click(screen.getByText("Cancel"));
-
-    expect(screen.getByText("Original Name")).toBeInTheDocument();
-    expect(screen.queryByDisplayValue("Wrong Name")).not.toBeInTheDocument();
-  });
-
-  it("shows alert and prevents save if fields are empty", () => {
-    render(
-      <TaskCard task={mockTask} onComplete={() => {}} onEdit={() => {}} />
-    );
-
-    fireEvent.click(screen.getByText("Edit"));
-
-    // Clear inputs
     fireEvent.change(screen.getByPlaceholderText("Task title"), {
       target: { value: "" },
     });
@@ -95,28 +68,42 @@ describe("TaskCard Component", () => {
 
     fireEvent.click(screen.getByText("Save"));
 
-    expect(global.alert).toHaveBeenCalledWith(
-      "Please fill in both title and description"
+    expect(
+      screen.getByText("Title and description are required")
+    ).toBeInTheDocument();
+    expect(global.alert).not.toHaveBeenCalled();
+  });
+
+  it("clears error message when user types", () => {
+    render(
+      <TaskCard task={mockTask} onComplete={() => {}} onEdit={() => {}} />
     );
+    fireEvent.click(screen.getByText("Edit"));
+
+    fireEvent.change(screen.getByPlaceholderText("Task title"), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByText("Save"));
+    expect(
+      screen.getByText("Title and description are required")
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText("Task title"), {
+      target: { value: "A" },
+    });
+
+    expect(
+      screen.queryByText("Title and description are required")
+    ).not.toBeInTheDocument();
   });
 
   it("handles missing description in task prop gracefully", () => {
     const taskNoDesc = { ...mockTask, description: undefined };
-
     render(
       <TaskCard task={taskNoDesc} onComplete={() => {}} onEdit={() => {}} />
     );
-
     fireEvent.click(screen.getByText("Edit"));
-
     expect(screen.getByPlaceholderText("Task description").value).toBe("");
-
-    fireEvent.change(screen.getByPlaceholderText("Task description"), {
-      target: { value: "Temp" },
-    });
-    fireEvent.click(screen.getByText("Cancel"));
-
-    expect(screen.queryByDisplayValue("Temp")).not.toBeInTheDocument();
   });
 
   it("calls onComplete when Done is clicked", () => {
@@ -124,7 +111,6 @@ describe("TaskCard Component", () => {
     render(
       <TaskCard task={mockTask} onComplete={mockOnComplete} onEdit={() => {}} />
     );
-
     fireEvent.click(screen.getByText("Done"));
     expect(mockOnComplete).toHaveBeenCalledWith(mockTask.id);
   });

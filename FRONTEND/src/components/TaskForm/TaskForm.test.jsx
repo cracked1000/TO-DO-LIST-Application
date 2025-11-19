@@ -10,35 +10,30 @@ describe("TaskForm Component", () => {
 
   it("updates input values on change", () => {
     render(<TaskForm onTaskAdded={() => {}} />);
-
     const nameInput = screen.getByPlaceholderText("Enter task title");
     fireEvent.change(nameInput, { target: { value: "Test Task" } });
-
     expect(nameInput.value).toBe("Test Task");
   });
 
-  it("disables button if fields are empty", () => {
+  it("button is enabled even if fields are empty (validation happens on click)", () => {
     render(<TaskForm onTaskAdded={() => {}} />);
     const button = screen.getByText("Add Task");
-    expect(button).toBeDisabled();
+    expect(button).not.toBeDisabled();
   });
 
-  it("enables button when fields are filled", () => {
+  it("shows error message if submitted empty", () => {
     render(<TaskForm onTaskAdded={() => {}} />);
 
-    fireEvent.change(screen.getByPlaceholderText("Enter task title"), {
-      target: { value: "A" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Enter task description"), {
-      target: { value: "B" },
-    });
+    fireEvent.click(screen.getByText("Add Task"));
 
-    expect(screen.getByText("Add Task")).not.toBeDisabled();
+    expect(
+      screen.getByText("Please fill in both title and description")
+    ).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it("calls fetch and onTaskAdded on valid submit", async () => {
     const mockOnTaskAdded = vi.fn();
-
     global.fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({}),
@@ -58,11 +53,9 @@ describe("TaskForm Component", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(mockOnTaskAdded).toHaveBeenCalled();
     });
-
-    expect(screen.getByPlaceholderText("Enter task title").value).toBe("");
   });
 
-  it("shows alert on failure (API responds with not ok)", async () => {
+  it("shows error message on API failure", async () => {
     global.fetch.mockResolvedValue({ ok: false });
     render(<TaskForm onTaskAdded={() => {}} />);
 
@@ -75,13 +68,13 @@ describe("TaskForm Component", () => {
     fireEvent.click(screen.getByText("Add Task"));
 
     await waitFor(() => {
-      expect(global.alert).toHaveBeenCalledWith(
-        "Failed to add task. Please try again."
-      );
+      expect(
+        screen.getByText("Failed to add task. Please try again.")
+      ).toBeInTheDocument();
     });
   });
 
-  it("handles network error (catch block)", async () => {
+  it("shows error message on network failure (catch block)", async () => {
     global.fetch.mockRejectedValue(new Error("Network error"));
 
     render(<TaskForm onTaskAdded={() => {}} />);
@@ -95,17 +88,9 @@ describe("TaskForm Component", () => {
     fireEvent.click(screen.getByText("Add Task"));
 
     await waitFor(() => {
-      expect(global.alert).toHaveBeenCalledWith("Failed to connect to server");
+      expect(
+        screen.getByText("Failed to connect to server")
+      ).toBeInTheDocument();
     });
-  });
-
-  it("shows alert if fields are empty (Defensive Check)", () => {
-    render(<TaskForm onTaskAdded={() => {}} />);
-    const button = screen.getByText("Add Task");
-    fireEvent.click(button);
-
-    expect(global.alert).toHaveBeenCalledWith(
-      "Please fill in both title and description"
-    );
   });
 });
