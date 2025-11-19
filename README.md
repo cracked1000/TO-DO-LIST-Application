@@ -146,7 +146,7 @@ npm install
 npm run dev
 ```
 
-The frontend will start on **http://localhost:5173** (Vite default port)
+The frontend will start on **http://localhost:3000**
 
 > **Note**: When running separately, you may need to configure CORS in the backend or update the frontend API base URL in your code.
 
