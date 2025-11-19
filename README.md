@@ -73,6 +73,27 @@ The easiest way to run the entire stack with one command.
    docker-compose down
    ```
 
+### ⚠️ Common Issue: Container Name Conflict
+
+If you see an error like:
+
+```
+Error response from daemon: Conflict. The container name "/todo-db" is already in use...
+```
+
+That means an old container is still present.  
+You can fix it easily by running:
+
+```bash
+docker container prune -f
+```
+
+Then re-run:
+
+```bash
+docker-compose up --build
+```
+
 ### Option 2: Run Components Separately (Development)
 
 Run the backend and frontend independently for active development.
