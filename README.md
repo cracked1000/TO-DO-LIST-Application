@@ -55,7 +55,7 @@ The easiest way to run the entire stack with one command.
 1. **Clone the repository**
    ```bash
    git clone https://github.com/cracked1000/TO-DO-LIST-Application.git
-   cd ToDoList-Project
+   cd TO-DO-LIST-Application
    ```
 
 2. **Build and Run**
