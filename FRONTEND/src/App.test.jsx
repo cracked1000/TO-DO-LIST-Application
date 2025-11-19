@@ -40,7 +40,6 @@ describe('App Integration', () => {
 
     await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument())
 
-    // 2. Fill out inputs
     const nameInput = screen.getByPlaceholderText('Enter task title')
     const descInput = screen.getByPlaceholderText('Enter task description')
     const addButton = screen.getByText('Add Task')
