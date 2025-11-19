@@ -24,7 +24,7 @@ A robust, containerized web application designed to manage daily tasks efficient
 ## 🗂️ Project Structure
 
 ```
-ToDoList-Project/
+TO-DO-LIST-Application/
 ├── docker-compose.yml              # Orchestration for DB, Backend, and Frontend
 ├── backend/
 │   └── ToDoList-Application/
@@ -51,7 +51,7 @@ The easiest way to run the application is using Docker. This ensures all depende
 1. **Clone the repository**
    ```bash
    git clone https://github.com/cracked1000/TO-DO-LIST-Application.git
-   cd ToDoList-Project
+   cd TO-DO-LIST-Application
    ```
 
 2. **Build and Run**
