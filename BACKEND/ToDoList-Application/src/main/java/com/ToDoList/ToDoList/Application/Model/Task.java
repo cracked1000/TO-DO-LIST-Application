@@ -24,7 +24,7 @@ public class Task {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // constant for the timezone to avoid repetition
+    
     private static final ZoneId SRI_LANKA_ZONE = ZoneId.of("Asia/Colombo");
 
     public Task() {

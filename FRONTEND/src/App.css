@@ -10,7 +10,7 @@ body {
   width: 100vw;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at 10% 20%, rgb(244, 238, 255) 0%, rgb(240, 225, 255) 90%);
+  background: radial-gradient(circle at 10% 20%, rgb(255, 255, 255) 0%, rgb(240, 225, 255) 90%);
   position: relative;
   color: #4c1d95;
 }
