@@ -1,0 +1,26 @@
+.navbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3px 40px;
+  background: linear-gradient(135deg, #8754e0 0%, #8c52e9 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.25);
+  flex-direction: column;
+}
+
+.navbar-title {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.navbar-quote {
+  font-size: 16px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  max-width: 600px;
+}

@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: todo-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=tododb
+    ports:
+      - "3306:3306"
+    networks:
+      - todo-network
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend/ToDoList-Application
+    container_name: todo-backend
+    ports:
+      - "8080:8080"
+    networks:
+      - todo-network
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/tododb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=rootpassword
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  frontend:
+    build: 
+      context: ./Frontend
+      args:
+        VITE_API_URL: /api
+    container_name: todo-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - todo-network
+    depends_on:
+      - backend
+
+networks:
+  todo-network:
+    driver: bridge
+
+volumes:
+  db-data:
