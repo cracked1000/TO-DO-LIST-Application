@@ -228,6 +228,10 @@ npm run test:watch
 
 Tests will automatically re-run when you save changes to your code.
 
+## Demo Video
+
+https://github.com/user-attachments/assets/2ddcaa41-0658-4c01-b429-d56c7e3a804a
+
 ## 🛠 API Endpoints
 
 The backend provides a RESTful API consumed by the frontend via Nginx proxy.
