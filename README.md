@@ -24,7 +24,7 @@ A robust, containerized web application designed to manage daily tasks efficient
 ## 🗂️ Project Structure
 
 ```
-TO-DO-LIST-Application/
+ToDoList-Project/
 ├── docker-compose.yml              # Orchestration for DB, Backend, and Frontend
 ├── backend/
 │   └── ToDoList-Application/
@@ -38,20 +38,24 @@ TO-DO-LIST-Application/
     └── Dockerfile                  # Multi-stage build for React + Nginx
 ```
 
-## 🐳 Getting Started (Docker)
+## 🐳 Getting Started
 
-The easiest way to run the application is using Docker. This ensures all dependencies (Java, Node, MySQL) are handled automatically.
+You can run this application in two ways: using Docker (recommended) or running each component separately for development.
 
-### Prerequisites
+### Option 1: Docker (Recommended)
+
+The easiest way to run the entire stack with one command.
+
+#### Prerequisites
 
 - Docker Desktop installed and running.
 
-### Steps
+#### Steps
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/cracked1000/TO-DO-LIST-Application.git
-   cd TO-DO-LIST-Application
+   cd ToDoList-Project
    ```
 
 2. **Build and Run**
@@ -64,38 +68,165 @@ The easiest way to run the application is using Docker. This ensures all depende
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:8080/tasks
 
+4. **Stop the Application**
+   ```bash
+   docker-compose down
+   ```
+
+### Option 2: Run Components Separately (Development)
+
+Run the backend and frontend independently for active development.
+
+#### Prerequisites
+
+- **Java 17** or higher
+- **Maven 3.6+**
+- **Node.js 18+** and npm
+- **MySQL 8.0** (running locally or via Docker)
+
+#### Step 1: Start MySQL Database
+
+If you don't have MySQL installed locally, you can run just the database container:
+
+```bash
+docker run --name todolist-mysql \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=todolist \
+  -p 3306:3306 \
+  -d mysql:8.0
+```
+
+#### Step 2: Run Backend
+
+```bash
+cd backend/ToDoList-Application
+
+# Update application.properties with your MySQL credentials if needed
+# Default expects: localhost:3306, database: todolist, user: root, password: root
+
+# Build and run
+mvn clean install
+mvn spring-boot:run
+```
+
+The backend will start on **http://localhost:8080**
+
+#### Step 3: Run Frontend
+
+Open a new terminal:
+
+```bash
+cd frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start development server
+npm run dev
+```
+
+The frontend will start on **http://localhost:5173** (Vite default port)
+
+> **Note**: When running separately, you may need to configure CORS in the backend or update the frontend API base URL in your code.
+
 ## 🧪 Testing
 
 The project includes comprehensive automated tests for both frontend and backend layers.
 
-### 1. Backend Tests (JUnit & Mockito)
+### Backend Tests (JUnit & Mockito)
 
 Tests the Service logic, Repository queries, and Controller endpoints.
+
+#### Run Tests
 
 ```bash
 cd backend/ToDoList-Application
 mvn test
 ```
 
-**Coverage includes:**
-- Top 5 query logic
-- Task creation flow
-- Exception handling
+#### View Detailed Test Results
 
-### 2. Frontend Tests (Vitest)
+```bash
+# Run tests with detailed output
+mvn test
+
+# Generate HTML test report (Surefire Reports)
+mvn surefire-report:report
+
+# View the report at:
+# target/surefire-reports/index.html
+```
+
+#### View Coverage Report (JaCoCo)
+
+```bash
+mvn clean test jacoco:report
+
+# Open the report at:
+# target/site/jacoco/index.html
+```
+
+The JaCoCo report provides:
+- **Line Coverage**: Percentage of code lines executed
+- **Branch Coverage**: Percentage of decision points tested
+- **Class/Method Coverage**: Detailed breakdown by class and method
+- **Visual Indicators**: Green (covered), yellow (partially covered), red (not covered)
+
+**Test Coverage includes:**
+- ✅ Top 5 query logic
+- ✅ Task creation flow
+- ✅ Exception handling
+- ✅ Repository CRUD operations
+- ✅ Controller endpoint responses
+
+### Frontend Tests (Vitest)
 
 Tests component rendering, user interactions, and API integration.
 
+#### Run Tests
+
 ```bash
 cd frontend
-npm install
+npm install  # If not already installed
 npm test
 ```
 
-**Coverage includes:**
-- TaskForm validation
-- TaskCard display
-- Navbar rendering
+#### Run Tests with UI
+
+```bash
+npm run test:ui
+```
+
+This opens an interactive browser interface showing:
+- Test results in real-time
+- Code coverage visualization
+- Individual test case details
+
+#### Generate Coverage Report
+
+```bash
+npm run test:coverage
+
+# View the HTML report at:
+# coverage/index.html
+```
+
+**Test Coverage includes:**
+- ✅ TaskForm validation
+- ✅ TaskCard display and interactions
+- ✅ Navbar rendering
+- ✅ API integration mocks
+- ✅ User event handling
+
+#### Continuous Testing (Watch Mode)
+
+For active development, run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
+Tests will automatically re-run when you save changes to your code.
 
 ## 🛠 API Endpoints
 
